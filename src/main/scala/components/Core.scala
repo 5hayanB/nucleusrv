@@ -5,19 +5,17 @@ import chisel3.util._
 import caravan.bus.common.{AbstrRequest, AbstrResponse, BusConfig}
 import components.{RVFI, RVFIPORT}
 
-class Core(val req:AbstrRequest, val rsp:AbstrResponse)(M:Boolean = false)(implicit val config:BusConfig) extends Module {
-  val io = IO(new Bundle {
+class Core(val req:AbstrRequest, val rsp:AbstrResponse)(M:Boolean = false)(implicit val config:BusConfig) extends MultiIOModule {
     val pin: UInt = Output(UInt(32.W))
 
-    val dmemReq = Decoupled(req)
-    val dmemRsp = Flipped(Decoupled(rsp))
+    val dmemReq = IO(Decoupled(req))
+    val dmemRsp = IO(Flipped(Decoupled(rsp)))
 
-    val imemReq = Decoupled(req)
-    val imemRsp = Flipped(Decoupled(rsp))
+    val imemReq = IO(Decoupled(req))
+    val imemRsp = IO(Flipped(Decoupled(rsp)))
 
-    val rvfi = new RVFIPORT
+    val rvfi = IO(new RVFIPORT)
 
-  })
 
   // IF-ID Registers
   val if_reg_pc = RegInit(0.U(32.W))
@@ -67,9 +65,9 @@ class Core(val req:AbstrRequest, val rsp:AbstrResponse)(M:Boolean = false)(impli
   val mem_reg_pc = RegInit(0.U(32.W))
 
   //Pipeline Units
-  val IF = Module(new InstructionFetch(req, rsp)).io
-  val ID = Module(new InstructionDecode).io
-  val EX = Module(new Execute(M)).io
+  val IF = Module(new InstructionFetch(req, rsp))
+  val ID = Module(new InstructionDecode)
+  val EX = Module(new Execute(M))
   val MEM = Module(new MemoryFetch(req,rsp))
 
   /*****************
@@ -78,18 +76,18 @@ class Core(val req:AbstrRequest, val rsp:AbstrResponse)(M:Boolean = false)(impli
 
   val pc = Module(new PC)
   
-  io.imemReq <> IF.coreInstrReq
-  IF.coreInstrResp <> io.imemRsp
+  imemReq <> IF.coreInstrReq
+  IF.coreInstrResp <> imemRsp
 
-  IF.address := pc.io.in.asUInt()
-  val instruction = Mux(io.imemRsp.valid, IF.instruction, "h00000013".U(32.W))
+  IF.address := pc.in.asUInt()
+  val instruction = Mux(imemRsp.valid, IF.instruction, "h00000013".U(32.W))
 
-  pc.io.halt := Mux(io.imemReq.valid, 0.B, 1.B)
-  pc.io.in := Mux(ID.hdu_pcWrite && !MEM.io.stall, Mux(ID.pcSrc, ID.pcPlusOffset.asSInt(), pc.io.pc4), pc.io.out)
+  pc.halt := Mux(imemReq.valid, 0.B, 1.B)
+  pc.in := Mux(ID.hdu_pcWrite && !MEM.stall, Mux(ID.pcSrc, ID.pcPlusOffset.asSInt(), pc.pc4), pc.out)
 
 
-  when(ID.hdu_if_reg_write && !MEM.io.stall) {
-    if_reg_pc := pc.io.out.asUInt()
+  when(ID.hdu_if_reg_write && !MEM.stall) {
+    if_reg_pc := pc.out.asUInt()
     if_reg_ins := instruction
   }
   when(ID.ifid_flush) {
@@ -121,7 +119,7 @@ class Core(val req:AbstrRequest, val rsp:AbstrResponse)(M:Boolean = false)(impli
 //  IF.PcWrite := ID.hdu_pcWrite
   ID.id_instruction := if_reg_ins
   ID.pcAddress := if_reg_pc
-  ID.dmem_resp_valid := io.dmemRsp.valid
+  ID.dmem_resp_valid := dmemRsp.valid
 //  IF.PcSrc := ID.pcSrc
 //  IF.PCPlusOffset := ID.pcPlusOffset
   ID.ex_ins := id_reg_ins
@@ -174,11 +172,11 @@ class Core(val req:AbstrRequest, val rsp:AbstrResponse)(M:Boolean = false)(impli
    * Memory Stage *
    ****************/
 
-  io.dmemReq <> MEM.io.dccmReq
-  MEM.io.dccmRsp <> io.dmemRsp
+  dmemReq <> MEM.dccmReq
+  MEM.dccmRsp <> dmemRsp
 //  val stall = Wire(Bool())
-//  stall := (ex_reg_ctl_memWrite || ex_reg_ctl_memRead) && !io.dmemRsp.valid
-  when(MEM.io.stall){
+//  stall := (ex_reg_ctl_memWrite || ex_reg_ctl_memRead) && !dmemRsp.valid
+  when(MEM.stall){
     mem_reg_rd := mem_reg_rd
     mem_reg_result := mem_reg_result
 //    mem_reg_wra := mem_reg_wra
@@ -194,7 +192,7 @@ class Core(val req:AbstrRequest, val rsp:AbstrResponse)(M:Boolean = false)(impli
     ex_reg_ctl_memWrite := ex_reg_ctl_memWrite
 
   } otherwise{
-    mem_reg_rd := MEM.io.readData
+    mem_reg_rd := MEM.readData
     mem_reg_result := ex_reg_result
 //    mem_reg_ctl_memToReg := ex_reg_ctl_memToReg
     mem_reg_ctl_regWrite := ex_reg_ctl_regWrite
@@ -207,10 +205,10 @@ class Core(val req:AbstrRequest, val rsp:AbstrResponse)(M:Boolean = false)(impli
   mem_reg_wra := ex_reg_wra
   mem_reg_ctl_memToReg := ex_reg_ctl_memToReg
   EX.ex_mem_regWrite := ex_reg_ctl_regWrite
-  MEM.io.aluResultIn := ex_reg_result
-  MEM.io.writeData := ex_reg_wd
-  MEM.io.readEnable := ex_reg_ctl_memRead
-  MEM.io.writeEnable := ex_reg_ctl_memWrite
+  MEM.aluResultIn := ex_reg_result
+  MEM.writeData := ex_reg_wd
+  MEM.readEnable := ex_reg_ctl_memRead
+  MEM.writeEnable := ex_reg_ctl_memWrite
   EX.mem_result := ex_reg_result
 
   /********************
@@ -221,8 +219,8 @@ class Core(val req:AbstrRequest, val rsp:AbstrResponse)(M:Boolean = false)(impli
   val wb_addr = Wire(UInt(5.W))
 
   when(mem_reg_ctl_memToReg === 1.U) {
-    wb_data := MEM.io.readData
-    wb_addr := Mux(io.dmemRsp.valid, mem_reg_wra, 0.U)
+    wb_data := MEM.readData
+    wb_addr := Mux(dmemRsp.valid, mem_reg_wra, 0.U)
   }.elsewhen(mem_reg_ctl_memToReg === 2.U) {
       wb_data := mem_reg_pc
       wb_addr := mem_reg_wra
@@ -238,23 +236,23 @@ class Core(val req:AbstrRequest, val rsp:AbstrResponse)(M:Boolean = false)(impli
   EX.mem_wb_regWrite := mem_reg_ctl_regWrite
   ID.writeReg := wb_addr
   ID.ctl_writeEnable := mem_reg_ctl_regWrite
-  io.pin := wb_data
+  pin := wb_data
 
 
 
   val rvfi = Module(new RVFI)
-  rvfi.io.stall := MEM.io.stall
-  rvfi.io.pc := pc.io.out
-  rvfi.io.pc_src := ID.pcSrc
-  rvfi.io.pc_four := pc.io.pc4
-  rvfi.io.pc_offset := pc.io.in
-  rvfi.io.rd_wdata := wb_data
-  rvfi.io.rd_addr := wb_addr
-  rvfi.io.rs1_rdata := ID.readData1
-  rvfi.io.rs2_rdata := ID.readData2
-  rvfi.io.insn := if_reg_ins
+  rvfi.stall := MEM.stall
+  rvfi.pc := pc.out
+  rvfi.pc_src := ID.pcSrc
+  rvfi.pc_four := pc.pc4
+  rvfi.pc_offset := pc.in
+  rvfi.rd_wdata := wb_data
+  rvfi.rd_addr := wb_addr
+  rvfi.rs1_rdata := ID.readData1
+  rvfi.rs2_rdata := ID.readData2
+  rvfi.insn := if_reg_ins
 
-  io.rvfi <> rvfi.io.rvfi
+  rvfi <> rvfi.rvfi
 
 
 }

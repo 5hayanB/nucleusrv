@@ -5,42 +5,40 @@ import chisel3.util._
 
 import caravan.bus.common.{AbstrRequest, AbstrResponse, BusConfig}
 
-class MemoryFetch(val req:AbstrRequest, val rsp:AbstrResponse)(implicit val config:BusConfig) extends Module {
-  val io = IO(new Bundle {
-    val aluResultIn: UInt = Input(UInt(32.W))
-    val writeData: UInt = Input(UInt(32.W))
-    val writeEnable: Bool = Input(Bool())
-    val readEnable: Bool = Input(Bool())
-    val readData: UInt = Output(UInt(32.W))
-    val stall: Bool = Output(Bool())
+class MemoryFetch(val req:AbstrRequest, val rsp:AbstrResponse)(implicit val config:BusConfig) extends MultiIOModule {
+    val aluResultIn = (Input(UInt(32.W)))
+    val writeData = (Input(UInt(32.W)))
+    val writeEnable = (Input(Bool()))
+    val readEnable = (Input(Bool()))
+    val readData = (Output(UInt(32.W)))
+    val stall = (Output(Bool()))
 
-    val dccmReq = Decoupled(req)
-    val dccmRsp = Flipped(Decoupled(rsp))
-  })
+    val dccmReq = (Decoupled(req))
+    val dccmRsp = (Flipped(Decoupled(rsp)))
 
   // val dataMem: DataMemory = Module(new DataMemory(req, rsp))
-  // dataMem.io.address := io.aluResultIn
-  // dataMem.io.writeData := io.writeData
-  // dataMem.io.writeEnable := io.writeEnable
-  // dataMem.io.readEnable := io.readEnable
+  // dataMem.address := aluResultIn
+  // dataMem.writeData := writeData
+  // dataMem.writeEnable := writeEnable
+  // dataMem.readEnable := readEnable
 
-  io.dccmRsp.ready := true.B
+  dccmRsp.ready := true.B
 
-  io.dccmReq.bits.activeByteLane := "b1111".U
-  io.dccmReq.bits.dataRequest := io.writeData
-  io.dccmReq.bits.addrRequest := io.aluResultIn
-  io.dccmReq.bits.isWrite := io.writeEnable
-  io.dccmReq.valid := Mux(io.writeEnable | io.readEnable, true.B, false.B)
+  dccmReq.bits.activeByteLane := "b1111".U
+  dccmReq.bits.dataRequest := writeData
+  dccmReq.bits.addrRequest := aluResultIn
+  dccmReq.bits.isWrite := writeEnable
+  dccmReq.valid := Mux(writeEnable | readEnable, true.B, false.B)
 
-  io.stall := (io.writeEnable || io.readEnable) && !io.dccmRsp.valid
+  stall := (writeEnable || readEnable) && !dccmRsp.valid
 
-  // io.dccmReq <> dataMem.io.coreDccmReq
-  // dataMem.io.coreDccmRsp <> io.dccmRsp
+  // dccmReq <> dataMem.coreDccmReq
+  // dataMem.coreDccmRsp <> dccmRsp
 
-  io.readData := Mux(io.dccmRsp.valid, io.dccmRsp.bits.dataResponse, DontCare) //dataMem.io.readData
+  readData := Mux(dccmRsp.valid, dccmRsp.bits.dataResponse, DontCare) //dataMem.readData
 
-  when(io.writeEnable && io.aluResultIn(31, 28) === "h8".asUInt()){
-    printf("%x\n", io.writeData)
+  when(writeEnable && aluResultIn(31, 28) === "h8".asUInt()){
+    printf("%x\n", writeData)
   }
 
 }

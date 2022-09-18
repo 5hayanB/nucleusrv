@@ -3,98 +3,96 @@ package nucleusrv.components
 import chisel3._
 import chisel3.util.MuxCase
 
-class Execute(M:Boolean = true) extends Module {
-  val io = IO(new Bundle {
-    val immediate = Input(UInt(32.W))
-    val readData1 = Input(UInt(32.W))
-    val readData2 = Input(UInt(32.W))
-    val pcAddress = Input(UInt(32.W))
-    val func7 = Input(UInt(7.W))
-    val func3 = Input(UInt(3.W))
-    val mem_result = Input(UInt(32.W))
-    val wb_result = Input(UInt(32.W))
+class Execute(M:Boolean = true) extends MultiIOModule {
+    val immediate = IO(Input(UInt(32.W)))
+    val readData1 = IO(Input(UInt(32.W)))
+    val readData2 = IO(Input(UInt(32.W)))
+    val pcAddress = IO(Input(UInt(32.W)))
+    val func7 = IO(Input(UInt(7.W)))
+    val func3 = IO(Input(UInt(3.W)))
+    val mem_result = IO(Input(UInt(32.W)))
+    val wb_result = IO(Input(UInt(32.W)))
 
-    val ex_mem_regWrite = Input(Bool())
-    val mem_wb_regWrite = Input(Bool())
-    val id_ex_ins = Input(UInt(32.W))
-    val ex_mem_ins = Input(UInt(32.W))
-    val mem_wb_ins = Input(UInt(32.W))
+    val ex_mem_regWrite = IO(Input(Bool()))
+    val mem_wb_regWrite = IO(Input(Bool()))
+    val id_ex_ins = IO(Input(UInt(32.W)))
+    val ex_mem_ins = IO(Input(UInt(32.W)))
+    val mem_wb_ins = IO(Input(UInt(32.W)))
 
-    val ctl_aluSrc = Input(Bool())
-    val ctl_aluOp = Input(UInt(2.W))
-    val ctl_aluSrc1 = Input(UInt(2.W))
+    val ctl_aluSrc = IO(Input(Bool()))
+    val ctl_aluOp = IO(Input(UInt(2.W)))
+    val ctl_aluSrc1 = IO(Input(UInt(2.W)))
 
-    val writeData = Output(UInt(32.W))
-    val ALUresult = Output(UInt(32.W))
-  })
-
+    val writeData = IO(Output(UInt(32.W)))
+    val ALUresult = IO(Output(UInt(32.W))
+)
   val alu = Module(new ALU)
   val aluCtl = Module(new AluControl)
-  val fu = Module(new ForwardingUnit).io
+  val fu = Module(new ForwardingUnit)
 
   // Forwarding Unt
 
-  fu.ex_regWrite := io.ex_mem_regWrite
-  fu.mem_regWrite := io.mem_wb_regWrite
-  fu.ex_reg_rd := io.ex_mem_ins(11, 7)
-  fu.mem_reg_rd := io.mem_wb_ins(11, 7)
-  fu.reg_rs1 := io.id_ex_ins(19, 15)
-  fu.reg_rs2 := io.id_ex_ins(24, 20)
+  fu.ex_regWrite := ex_mem_regWrite
+  fu.mem_regWrite := mem_wb_regWrite
+  fu.ex_reg_rd := ex_mem_ins(11, 7)
+  fu.mem_reg_rd := mem_wb_ins(11, 7)
+  fu.reg_rs1 := id_ex_ins(19, 15)
+  fu.reg_rs2 := id_ex_ins(24, 20)
 
   val inputMux1 = MuxCase(
     0.U,
     Array(
-      (fu.forwardA === 0.U) -> (io.readData1),
-      (fu.forwardA === 1.U) -> (io.mem_result),
-      (fu.forwardA === 2.U) -> (io.wb_result)
+      (fu.forwardA === 0.U) -> (readData1),
+      (fu.forwardA === 1.U) -> (mem_result),
+      (fu.forwardA === 2.U) -> (wb_result)
     )
   )
   val inputMux2 = MuxCase(
     0.U,
     Array(
-      (fu.forwardB === 0.U) -> (io.readData2),
-      (fu.forwardB === 1.U) -> (io.mem_result),
-      (fu.forwardB === 2.U) -> (io.wb_result)
+      (fu.forwardB === 0.U) -> (readData2),
+      (fu.forwardB === 1.U) -> (mem_result),
+      (fu.forwardB === 2.U) -> (wb_result)
     )
   )
 
   val aluIn1 = MuxCase(
     inputMux1,
     Array(
-      (io.ctl_aluSrc1 === 1.U) -> io.pcAddress,
-      (io.ctl_aluSrc1 === 2.U) -> 0.U
+      (ctl_aluSrc1 === 1.U) -> pcAddress,
+      (ctl_aluSrc1 === 2.U) -> 0.U
     )
   )
-  val aluIn2 = Mux(io.ctl_aluSrc, inputMux2, io.immediate)
+  val aluIn2 = Mux(ctl_aluSrc, inputMux2, immediate)
 
-  aluCtl.io.f3 := io.func3
-  aluCtl.io.f7 := io.func7(5)
-  aluCtl.io.aluOp := io.ctl_aluOp
-  aluCtl.io.aluSrc := io.ctl_aluSrc
+  aluCtl.f3 := func3
+  aluCtl.f7 := func7(5)
+  aluCtl.aluOp := ctl_aluOp
+  aluCtl.aluSrc := ctl_aluSrc
 
-  alu.io.input1 := aluIn1
-  alu.io.input2 := aluIn2
-  alu.io.aluCtl := aluCtl.io.out
+  alu.input1 := aluIn1
+  alu.input2 := aluIn2
+  alu.aluCtl := aluCtl.out
 
   if(M){
     val mdu = Module (new MDU)
     val mduCtl = Module(new MduControl)
 
-    mduCtl.io.f3 := io.func3
-    mduCtl.io.f7 := io.func7
-    mduCtl.io.aluOp := io.ctl_aluOp
-    mduCtl.io.aluSrc := io.ctl_aluSrc
+    mduCtl.f3 := func3
+    mduCtl.f7 := func7
+    mduCtl.aluOp := ctl_aluOp
+    mduCtl.aluSrc := ctl_aluSrc
 
-    mdu.io.src_a := aluIn1.asSInt
-    mdu.io.src_b := aluIn2.asSInt
-    mdu.io.op := mduCtl.io.op
-    mdu.io.valid := true.B
+    mdu.src_a := aluIn1.asSInt
+    mdu.src_b := aluIn2.asSInt
+    mdu.op := mduCtl.op
+    mdu.valid := true.B
 
-    when (io.func7 === 1.U && mdu.io.ready){io.ALUresult := (Mux(mdu.io.output.valid, mdu.io.output.bits, 0.S)).asUInt}
-    .otherwise{io.ALUresult := alu.io.result}
-  }else{io.ALUresult := alu.io.result}
+    when (func7 === 1.U && mdu.ready){ALUresult := (Mux(mdu.output.valid, mdu.output.bits, 0.S)).asUInt}
+    .otherwise{ALUresult := alu.result}
+  }else{ALUresult := alu.result}
 
-  // io.ALUresult := alu.io.result
+  // ALUresult := alu.result
 
-  io.writeData := inputMux2
+  writeData := inputMux2
 }

@@ -3,22 +3,20 @@ package nucleusrv.components
 import chisel3._
 import chisel3.util._
 
-class Control extends Module {
-  val io = IO(new Bundle {
-    val in = Input(UInt(32.W))
-    val aluSrc = Output(Bool())
-    val memToReg = Output(UInt(2.W))
-    val regWrite = Output(Bool())
-    val memRead = Output(Bool())
-    val memWrite = Output(Bool())
-    val branch = Output(Bool())
-    val aluOp = Output(UInt(2.W))
-    val jump = Output(UInt(2.W))
-    val aluSrc1 = Output(UInt(2.W))
-  })
-
+class Control extends MultiIOModule {
+    val in = IO(Input(UInt(32.W)))
+    val aluSrc = IO(Output(Bool()))
+    val memToReg = IO(Output(UInt(2.W)))
+    val regWrite = IO(Output(Bool()))
+    val memRead = IO(Output(Bool()))
+    val memWrite = IO(Output(Bool()))
+    val branch =IO( Output(Bool()))
+    val aluOp = IO(Output(UInt(2.W)))
+    val jump = IO(Output(UInt(2.W)))
+    val aluSrc1 = IO(Output(UInt(2.W))
+)
   val signals = ListLookup(
-    io.in,
+    in,
     /*   aluSrc  ToReg regWrite memRead  memWrite branch  jump  aluOp aluSrc1*/
     List(false.B, 0.U, false.B, false.B, false.B, false.B, 0.U, 0.U, 0.U),
     Array(
@@ -132,13 +130,13 @@ class Control extends Module {
       )
     )
   )
-  io.aluSrc := signals(0)
-  io.memToReg := signals(1)
-  io.regWrite := signals(2)
-  io.memRead := signals(3)
-  io.memWrite := signals(4)
-  io.branch := signals(5)
-  io.jump := signals(6)
-  io.aluOp := signals(7)
-  io.aluSrc1 := signals(8)
+  aluSrc := signals(0)
+  memToReg := signals(1)
+  regWrite := signals(2)
+  memRead := signals(3)
+  memWrite := signals(4)
+  branch := signals(5)
+  jump := signals(6)
+  aluOp := signals(7)
+  aluSrc1 := signals(8)
 }

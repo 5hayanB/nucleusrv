@@ -1,16 +1,14 @@
 package nucleusrv.components
 import chisel3._
 import caravan.bus.common.{AbstrRequest, AbstrResponse, BusConfig, BusDevice, BusHost}
-import caravan.bus.wishbone.{WBRequest, WBResponse, WishboneConfig}
+// import caravan.bus.wishbone.{WBRequest, WBResponse, WishboneConfig}
 import caravan.bus.tilelink.{TLRequest, TLResponse, TilelinkConfig}
 import components.RVFIPORT
 import jigsaw.rams.fpga.BlockRam
 
-class Top(programFile:Option[String]) extends Module{
-  val io = IO(new Bundle() {
-    val pin = Output(UInt(32.W))
-    val rvfi = new RVFIPORT
-  })
+class Top(programFile:Option[String]) extends MultiIOModule{
+    val pin = IO(Output(UInt(32.W)))
+    val rvfi = IO(new RVFIPORT)
 
   implicit val config = WishboneConfig(32, 32) //WishboneConfig(32,32)
 
@@ -23,19 +21,19 @@ class Top(programFile:Option[String]) extends Module{
   val dmemCtrl = Module(BlockRam.createMaskableRAM(config, 1024))
 
   /*  Imem Interceonnections  */
-  imemAdapter.io.reqIn <> core.io.imemReq
-  core.io.imemRsp <> imemAdapter.io.rspOut
-  imemCtrl.io.req <> imemAdapter.io.reqOut
-  imemAdapter.io.rspIn <> imemCtrl.io.rsp
+  imemAdapter.reqIn <> core.imemReq
+  core.imemRsp <> imemAdapter.rspOut
+  imemCtrl.req <> imemAdapter.reqOut
+  imemAdapter.rspIn <> imemCtrl.rsp
 
   /*  Dmem Interconnections  */
-  dmemAdapter.io.reqIn <> core.io.dmemReq
-  core.io.dmemRsp <> dmemAdapter.io.rspOut
-  dmemCtrl.io.req <> dmemAdapter.io.reqOut
-  dmemAdapter.io.rspIn <> dmemCtrl.io.rsp
+  dmemAdapter.reqIn <> core.dmemReq
+  core.dmemRsp <> dmemAdapter.rspOut
+  dmemCtrl.req <> dmemAdapter.reqOut
+  dmemAdapter.rspIn <> dmemCtrl.rsp
 
-  io.rvfi <> core.io.rvfi
-  io.pin := core.io.pin
+  rvfi <> core.rvfi
+  pin := core.pin
 
 }
 //class Top(programFile:Option[String]) extends Module{
@@ -55,18 +53,18 @@ class Top(programFile:Option[String]) extends Module{
 //  val dmemCtrl = Module(BlockRam.createMaskableRAM(config, 1024))
 //
 //  /*  Imem Interceonnections  */
-//  imemAdapter.io.reqIn <> core.io.imemReq
-//  core.io.imemRsp <> imemAdapter.io.rspOut
-//  imemCtrl.io.req <> imemAdapter.io.reqOut
-//  imemAdapter.io.rspIn <> imemCtrl.io.rsp
+//  imemAdapter.reqIn <> core.imemReq
+//  core.imemRsp <> imemAdapter.rspOut
+//  imemCtrl.req <> imemAdapter.reqOut
+//  imemAdapter.rspIn <> imemCtrl.rsp
 //
 //  /*  Dmem Interconnections  */
-//  dmemAdapter.io.reqIn <> core.io.dmemReq
-//  core.io.dmemRsp <> dmemAdapter.io.rspOut
-//  dmemCtrl.io.req <> dmemAdapter.io.reqOut
-//  dmemAdapter.io.rspIn <> dmemCtrl.io.rsp
+//  dmemAdapter.reqIn <> core.dmemReq
+//  core.dmemRsp <> dmemAdapter.rspOut
+//  dmemCtrl.req <> dmemAdapter.reqOut
+//  dmemAdapter.rspIn <> dmemCtrl.rsp
 //
-//  io.rvfi <> core.io.rvfi
-//  io.pin := core.io.pin
+//  rvfi <> core.rvfi
+//  pin := core.pin
 //
 //}
