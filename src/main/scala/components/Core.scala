@@ -2,17 +2,17 @@
 package nucleusrv.components
 import chisel3._
 import chisel3.util._
-import caravan.bus.common.{AbstrRequest, AbstrResponse, BusConfig}
+import caravan.bus.common.{AbstrRequest, AbstrResponse, BusConfig, DecoupledMulti}
 import components.{RVFI, RVFIPORT}
 
 class Core(val req:AbstrRequest, val rsp:AbstrResponse)(M:Boolean = false)(implicit val config:BusConfig) extends MultiIOModule {
     val pin: UInt = Output(UInt(32.W))
 
-    val dmemReq = IO(Decoupled(req))
-    val dmemRsp = IO(Flipped(Decoupled(rsp)))
+    val dmemReq = IO(DecoupledMulti(req))
+    val dmemRsp = IO(Flipped(DecoupledMulti(rsp)))
 
-    val imemReq = IO(Decoupled(req))
-    val imemRsp = IO(Flipped(Decoupled(rsp)))
+    val imemReq = IO(DecoupledMulti(req))
+    val imemRsp = IO(Flipped(DecoupledMulti(rsp)))
 
     val rvfi = IO(new RVFIPORT)
 

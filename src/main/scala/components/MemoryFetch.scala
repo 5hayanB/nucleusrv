@@ -3,7 +3,7 @@ package nucleusrv.components
 import chisel3._
 import chisel3.util._ 
 
-import caravan.bus.common.{AbstrRequest, AbstrResponse, BusConfig}
+import caravan.bus.common.{AbstrRequest, AbstrResponse, BusConfig, DecoupledMulti}
 
 class MemoryFetch(val req:AbstrRequest, val rsp:AbstrResponse)(implicit val config:BusConfig) extends MultiIOModule {
     val aluResultIn = (Input(UInt(32.W)))
@@ -13,8 +13,8 @@ class MemoryFetch(val req:AbstrRequest, val rsp:AbstrResponse)(implicit val conf
     val readData = (Output(UInt(32.W)))
     val stall = (Output(Bool()))
 
-    val dccmReq = (Decoupled(req))
-    val dccmRsp = (Flipped(Decoupled(rsp)))
+    val dccmReq = (DecoupledMulti(req))
+    val dccmRsp = (Flipped(DecoupledMulti(rsp)))
 
   // val dataMem: DataMemory = Module(new DataMemory(req, rsp))
   // dataMem.address := aluResultIn

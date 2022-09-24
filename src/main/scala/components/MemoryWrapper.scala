@@ -2,11 +2,11 @@ package nucleusrv.components
 
 import chisel3._
 import chisel3.util._
-import caravan.bus.common.{BusConfig, AbstrRequest, AbstrResponse}
+import caravan.bus.common.{BusConfig, AbstrRequest, AbstrResponse, DecoupledMulti}
 
 class MemoryWrapper(val req:AbstrRequest, val rsp:AbstrResponse)(implicit val config:BusConfig) extends MultiIOModule {
-        val request = IO(Flipped(Decoupled(req)))   
-        val response = IO(Decoupled(rsp))          
+        val request = IO(Flipped(DecoupledMulti(req)))   
+        val response = IO(DecoupledMulti(rsp))          
 
     request.ready := true.B
 

@@ -3,14 +3,14 @@ package nucleusrv.components
 import chisel3._
 import chisel3.util._ 
 
-import caravan.bus.common.{BusConfig, AbstrRequest, AbstrResponse}
+import caravan.bus.common.{BusConfig, AbstrRequest, AbstrResponse, DecoupledMulti}
 
 class InstructionFetch(val req:AbstrRequest, val rsp:AbstrResponse)(implicit val config:BusConfig) extends MultiIOModule {
     val address = IO(Input(UInt(32.W)))
     val instruction = IO(Output(UInt(32.W)))
 
-    val coreInstrReq = IO(Decoupled(req))
-    val coreInstrResp = IO(Flipped(Decoupled(rsp)))
+    val coreInstrReq = IO(DecoupledMulti(req))
+    val coreInstrResp = IO(Flipped(DecoupledMulti(rsp)))
 
   coreInstrResp.ready := true.B
 
