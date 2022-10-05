@@ -2,7 +2,7 @@
 package nucleusrv.components
 import chisel3._
 
-class InstructionDecode extends Module {
+class InstructionDecode(RVFI:Boolean=false) extends Module {
   val io = IO(new Bundle {
     val id_instruction = Input(UInt(32.W))
     val writeData = Input(UInt(32.W))
@@ -47,6 +47,9 @@ class InstructionDecode extends Module {
     val ifid_flush = Output(Bool())
 
     val stall = Output(Bool())
+
+    val rs1_addr = if (RVFI) Some(Output(UInt(5.W))) else None
+    val rs2_addr = if (RVFI) Some(Output(UInt(5.W))) else None
   })
 
   //Hazard Detection Unit
@@ -192,4 +195,10 @@ class InstructionDecode extends Module {
   }
 
   io.stall := io.func7 === 1.U && (io.func3 === 4.U || io.func3 === 5.U || io.func3 === 6.U || io.func3 === 7.U)
+
+  if (RVFI) Seq(
+    (io.rs1_addr, registerRs1),
+    (io.rs2_addr, registerRs2)
+  ) map (x => x._1.get := x._2)
+  else None
 }

@@ -3,7 +3,7 @@ package nucleusrv.components
 import chisel3._
 import chisel3.util._
 
-class Core(M:Boolean = false) extends Module {
+class Core(M:Boolean = false, RVFI:Boolean=false) extends Module {
   val io = IO(new Bundle {
     val pin: UInt = Output(UInt(32.W))
     val stall: Bool = Input(Bool())
@@ -14,6 +14,24 @@ class Core(M:Boolean = false) extends Module {
     val imemReq = Decoupled(new MemRequestIO)
     val imemRsp = Flipped(Decoupled(new MemResponseIO))
 
+    val mem_reg_ins = if (RVFI) Some(Output(UInt(32.W))) else None
+    
+    val id_reg_rd1 = if (RVFI) Some(Output(SInt(32.W))) else None
+    val id_reg_rd2 = if (RVFI) Some(Output(SInt(32.W))) else None
+    val wb_rd = if (RVFI) Some(Output(UInt(5.W))) else None
+    val rs1_addr = if (RVFI) Some(Output(UInt(5.W))) else None
+    val rs2_addr = if (RVFI) Some(Output(UInt(5.W))) else None
+    val wb_data = if (RVFI) Some(Output(SInt(32.W))) else None
+    val writeEnable = if (RVFI) Some(Output(Bool())) else None
+
+    val mem_reg_pc = if (RVFI) Some(Output(UInt(32.W))) else None
+    val nextPC = if (RVFI) Some(Output(UInt(32.W))) else None
+
+    val ex_reg_result = if (RVFI) Some(Output(UInt(32.W))) else None
+    val readEnable = if (RVFI) Some(Output(Bool())) else None
+    val memWriteEnable = if (RVFI) Some(Output(Bool())) else None
+    val ex_reg_wd = if (RVFI) Some(Output(SInt(32.W))) else None
+    val readData = if (RVFI) Some(Output(SInt(32.W))) else None
   })
 
   // IF-ID Registers
@@ -67,7 +85,7 @@ class Core(M:Boolean = false) extends Module {
   val IF = Module(new InstructionFetch).io
   val RA = Module(new Realigner).io
   val CD = Module(new CompressedDecoder).io
-  val ID = Module(new InstructionDecode).io
+  val ID = Module(new InstructionDecode(RVFI)).io
   val EX = Module(new Execute(M = M)).io
   val MEM = Module(new MemoryFetch)
 
@@ -110,7 +128,8 @@ class Core(M:Boolean = false) extends Module {
   
   // pc.io.halt := Mux(io.imemReq.valid || ~EX.stall || ~ID.stall, 0.B, 1.B)
   pc.io.halt := Mux(((EX.stall || ID.stall || IF_stall || ~io.imemReq.valid) | RA.ral_halt_o), 1.B, 0.B)
-  pc.io.in := Mux(ID.hdu_pcWrite, Mux(ID.pcSrc, ID.pcPlusOffset.asSInt(), Mux(CD.is_comp, pc.io.pc2, pc.io.pc4)), pc.io.out)
+  val nextPC = Mux(ID.hdu_pcWrite, Mux(ID.pcSrc, ID.pcPlusOffset.asSInt(), Mux(CD.is_comp, pc.io.pc2, pc.io.pc4)), pc.io.out)
+  pc.io.in := nextPC
 
   when(ID.hdu_if_reg_write) {
     if_reg_pc := pc.io.out.asUInt()
@@ -272,6 +291,33 @@ class Core(M:Boolean = false) extends Module {
   ID.writeReg := wb_addr
   ID.ctl_writeEnable := mem_reg_ctl_regWrite
   io.pin := wb_data
+
+  /*******************************
+   *            RVFI             *
+   ******************************/
+  
+  if (RVFI) Seq(
+    (io.mem_reg_ins, mem_reg_ins),
+
+    (io.id_reg_rd1, id_reg_rd1.asSInt),
+    (io.id_reg_rd2, id_reg_rd2.asSInt),
+    (io.wb_rd, wb_addr),
+    (io.rs1_addr, ID.rs1_addr.get),
+    (io.rs2_addr, ID.rs2_addr.get),
+    (io.wb_data, wb_data.asSInt),
+    (io.writeEnable, mem_reg_ctl_regWrite),
+
+    (io.mem_reg_pc, mem_reg_pc),
+    (io.nextPC, nextPC.asUInt),
+
+    (io.ex_reg_result, ex_reg_result),
+    (io.readEnable, ex_reg_ctl_memRead),
+    (io.memWriteEnable, ex_reg_ctl_memWrite),
+    (io.ex_reg_wd, ex_reg_wd.asSInt),
+    (io.readData, MEM.io.readData.asSInt)
+  ) map (x => x._1.get := x._2)
+  else None
+
 
   /*******************************
    * Log, in format of Spike-ISS *
