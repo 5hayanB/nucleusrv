@@ -48,8 +48,8 @@ class InstructionDecode(RVFI:Boolean=false) extends Module {
 
     val stall = Output(Bool())
 
-    val rs1_addr = if (RVFI) Some(Output(UInt(5.W))) else None
-    val rs2_addr = if (RVFI) Some(Output(UInt(5.W))) else None
+    //val rs1_addr = if (RVFI) Some(Output(UInt(5.W))) else None
+    //val rs2_addr = if (RVFI) Some(Output(UInt(5.W))) else None
   })
 
   //Hazard Detection Unit
@@ -196,9 +196,9 @@ class InstructionDecode(RVFI:Boolean=false) extends Module {
 
   io.stall := io.func7 === 1.U && (io.func3 === 4.U || io.func3 === 5.U || io.func3 === 6.U || io.func3 === 7.U)
 
-  if (RVFI) Seq(
-    (io.rs1_addr, registerRs1),
-    (io.rs2_addr, registerRs2)
-  ) map (x => x._1.get := x._2)
-  else None
+  //if (RVFI) Seq(
+  //  (io.rs1_addr, registerRs1),
+  //  (io.rs2_addr, registerRs2)
+  //) map (x => x._1.get := x._2)
+  //else None
 }

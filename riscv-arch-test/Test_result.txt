@@ -12,8 +12,19 @@ riscv-test-env/verify.sh
 
 Compare to reference files ... 
 
-Check                 I-ADD-017d6
-< 07654320
+Check                 I-ADD-019d8
+< 80000000
+12,14d10
+< 80000000
+< fffff5cb
+< fffffffe
+22d17
+< 00001a34
+25d19
+< 80000000
+32,33d25
+< 00000000
+< ffffffff
  ... FAIL
 Check                I-ADDI-01 ... IGNORE
 Check                 I-AND-01 ... IGNORE
