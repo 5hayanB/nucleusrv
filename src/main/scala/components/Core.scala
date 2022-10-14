@@ -33,6 +33,8 @@ class Core(M:Boolean = false, RVFI:Boolean=false) extends Module {
     val memWriteEnable = if (RVFI) Some(Output(Bool())) else None
     val ex_reg_wd = if (RVFI) Some(Output(SInt(32.W))) else None
     val readData = if (RVFI) Some(Output(SInt(32.W))) else None
+
+    val hdu_if_reg_write = if (RVFI) Some(Output(Bool())) else None
   })
 
   // IF-ID Registers
@@ -297,6 +299,8 @@ class Core(M:Boolean = false, RVFI:Boolean=false) extends Module {
           io.memWriteEnable.get := ex_reg_ctl_memWrite
           io.ex_reg_wd.get := ex_reg_wd.asSInt
           io.readData.get := MEM.io.readData.asSInt
+
+          io.hdu_if_reg_write.get := ID.hdu_if_reg_write
   } else None
 
   //if (RVFI) { Seq(

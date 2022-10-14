@@ -48,6 +48,7 @@ class Top(programFile:Option[String], dataFile:Option[String], RVFI:Boolean=fals
     (tracer.get.io.memWriteEnable, core.io.memWriteEnable),
     (tracer.get.io.ex_reg_wd, core.io.ex_reg_wd),
     (tracer.get.io.readData, core.io.readData),
+    (tracer.get.io.hdu_if_reg_write, core.io.hdu_if_reg_write)
   ) map (x => x._1.get := x._2.get) else None
 
   //if (RVFI) printf(

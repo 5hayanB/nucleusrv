@@ -28,10 +28,13 @@ class RVFI_IO(RVFI:Boolean, XLEN:Int, NRET:Int, ILEN:Int) extends Bundle {
   val ex_reg_wd     = if (RVFI) Some(Input(SInt(XLEN.W))) else None
   val readData      = if (RVFI) Some(Input(SInt(XLEN.W))) else None
 
+  // - Hazard
+  val hdu_if_reg_write = if (RVFI) Some(Input(Bool())) else None
+
   // Output ports
 
   // - Instruction metadata
-  //val rvfi_valid = if (RVFI) Some(Output(UInt(NRET.W))) else None
+  val rvfi_valid = if (RVFI) Some(Output(Bool())) else None
   //val rvfi_order = if (RVFI) Some(Output(UInt((NRET * 64).W))) else None
   val rvfi_insn  = if (RVFI) Some(Output(UInt((NRET * ILEN).W))) else None
   //val rvfi_trap  = if (RVFI) Some(Output(UInt(NRET.W))) else None
@@ -78,6 +81,7 @@ class RVFIUnit(RVFI:Boolean=false, XLEN:Int=32, NRET:Int=1, ILEN:Int=32) extends
   val memWriteEnable = if (RVFI) Some(dontTouch(WireInit(io.memWriteEnable.get))) else None
   val ex_reg_wd      = if (RVFI) Some(dontTouch(WireInit(io.ex_reg_wd.get))) else None
   val readData       = if (RVFI) Some(dontTouch(WireInit(io.readData.get))) else None
+  val hdu_if_reg_write = if (RVFI) Some(dontTouch(WireInit(io.hdu_if_reg_write.get))) else None
 
   // Delay Registers
   //
@@ -108,9 +112,14 @@ class RVFIUnit(RVFI:Boolean=false, XLEN:Int=32, NRET:Int=1, ILEN:Int=32) extends
   val mem_reg_readEnable  = if (RVFI) Some(dontTouch(RegInit(0.B))) else None
   val mem_reg_writeEnable = if (RVFI) Some(dontTouch(RegInit(0.B))) else None
 
+  // - Hazard
+  val id_hdu_if_reg_write = if (RVFI) Some(dontTouch(RegInit(0.B))) else None
+  val ex_hdu_if_reg_write = if (RVFI) Some(dontTouch(RegInit(0.B))) else None
+  val mem_hdu_if_reg_write = if (RVFI) Some(dontTouch(RegInit(0.B))) else None
+
   // Intermediate wires
   // - Instruction metadata
-  //val rvfi_valid = if (RVFI) Some(Output(UInt(NRET.W))) else None
+  val rvfi_valid = if (RVFI) Some(dontTouch(WireInit((mem_reg_ins.get =/= 0.U) && mem_hdu_if_reg_write.get))) else None
   //val rvfi_order = if (RVFI) Some(Output(UInt((NRET * 64).W))) else None
   val rvfi_insn = if (RVFI) Some(dontTouch(WireInit(mem_reg_ins.get))) else None
   //val rvfi_trap  = if (RVFI) Some(Output(UInt(NRET.W))) else None
@@ -139,16 +148,21 @@ class RVFIUnit(RVFI:Boolean=false, XLEN:Int=32, NRET:Int=1, ILEN:Int=32) extends
   val rvfi_mem_wdata = if (RVFI) Some(dontTouch(WireInit(mem_reg_wd.get))) else None
 
 
+  val rs2Sel = if (RVFI) Some(dontTouch(WireInit(
+    (rvfi_insn.get(6, 0) === 51.U) || (rvfi_insn.get(6, 0) === 59.U) ||  // R-Type
+    (rvfi_insn.get(6, 0) === 35.U) || (rvfi_insn.get(6, 0) === 99.U)  // S-Type
+  ))) else None
+
   // Wiring to output ports
   if (RVFI) io.rvfi_mode.get := 3.U else None
   if (RVFI) Seq(
     // RVFI output ports
     //
     // - Instruction metadata
-    io.rvfi_insn,
+    io.rvfi_insn, io.rvfi_valid,
 
     // - Register read
-    io.rvfi_rs1_addr, io.rvfi_rs2_addr, io.rvfi_rs1_rdata, io.rvfi_rs2_rdata,
+    io.rvfi_rs1_addr, io.rvfi_rs1_rdata, io.rvfi_rs2_rdata,
 
     // - Program Counter
     io.rvfi_pc_rdata, io.rvfi_pc_wdata,
@@ -165,16 +179,18 @@ class RVFIUnit(RVFI:Boolean=false, XLEN:Int=32, NRET:Int=1, ILEN:Int=32) extends
     if_reg_nPC, id_reg_nPC, ex_reg_nPC, mem_reg_nPC,
 
     // - Memory Access
-    mem_reg_result, mem_reg_wd, mem_reg_readEnable, mem_reg_writeEnable
+    mem_reg_result, mem_reg_wd, mem_reg_readEnable, mem_reg_writeEnable,
 
+    // - Hazard
+    id_hdu_if_reg_write, ex_hdu_if_reg_write, mem_hdu_if_reg_write
   ) zip Seq(
     // RVFI output ports
     //
     // - Instruction metadata
-    rvfi_insn, 
+    rvfi_insn, rvfi_valid,
 
     // - Register read
-    rvfi_rs1_addr, rvfi_rs2_addr, rvfi_rs1_rdata, rvfi_rs2_rdata,
+    rvfi_rs1_addr, rvfi_rs1_rdata, rvfi_rs2_rdata,
 
     // - Program Counter
     rvfi_pc_rdata, rvfi_pc_wdata,
@@ -191,8 +207,10 @@ class RVFIUnit(RVFI:Boolean=false, XLEN:Int=32, NRET:Int=1, ILEN:Int=32) extends
     nextPC, if_reg_nPC, id_reg_nPC, ex_reg_nPC,
 
     // - Memory Access
-    ex_reg_result, ex_reg_wd, readEnable, memWriteEnable
+    ex_reg_result, ex_reg_wd, readEnable, memWriteEnable,
 
+    // - Hazard
+    hdu_if_reg_write, id_hdu_if_reg_write, ex_hdu_if_reg_write
   ) foreach {
     x => x._1.get := x._2.get
   } else None
@@ -205,8 +223,9 @@ class RVFIUnit(RVFI:Boolean=false, XLEN:Int=32, NRET:Int=1, ILEN:Int=32) extends
     // - Memory Access
     io.rvfi_mem_addr,
     io.rvfi_mem_rdata,
-    io.rvfi_mem_wdata
+    io.rvfi_mem_wdata,
 
+    io.rvfi_rs2_addr
   ) zip Seq(
     // - Register write
     (writeEnable.get, rvfi_rd_addr,  0.U),
@@ -215,18 +234,20 @@ class RVFIUnit(RVFI:Boolean=false, XLEN:Int=32, NRET:Int=1, ILEN:Int=32) extends
     // - Memory Access
     (mem_reg_readEnable.get || mem_reg_writeEnable.get, rvfi_mem_addr,  0.U),
     (mem_reg_readEnable.get,                            rvfi_mem_rdata, 0.S),
-    (mem_reg_writeEnable.get,                           rvfi_mem_wdata, 0.S)
-
+    (mem_reg_writeEnable.get,                           rvfi_mem_wdata, 0.S),
+    
+    (rs2Sel.get, rvfi_rs2_addr, 0.U)
   ) foreach {
     x => x._1.get := Mux(x._2._1, x._2._2.get, x._2._3)
   } else None
 
   val clkCycle = if (RVFI) Some(RegInit(0.U(32.W))) else None
   if (RVFI) clkCycle.get := clkCycle.get + 1.U else None
-  if (RVFI) printf(
+  if (RVFI) when (rvfi_valid.get) {
+    printf(
         "ClkCycle: %d, pc_rdata: %x, pc_wdata: %x, insn: %x, mode: %d, rs1_addr: %d, rs1_rdata: %x, rs2_addr: %d, rs2_rdata: %x, rd_addr: %d, rd_wdata: %x, mem_addr: %x, mem_rdata: %x, mem_wdata: %x\n",
-        clkCycle.get,                    io.rvfi_pc_rdata.get,  io.rvfi_pc_wdata.get,  io.rvfi_insn.get,      io.rvfi_mode.get,
+        clkCycle.get,         io.rvfi_pc_rdata.get,  io.rvfi_pc_wdata.get,  io.rvfi_insn.get,      io.rvfi_mode.get,
         io.rvfi_rs1_addr.get, io.rvfi_rs1_rdata.get, io.rvfi_rs2_addr.get,  io.rvfi_rs2_rdata.get, io.rvfi_rd_addr.get,
         io.rvfi_rd_wdata.get, io.rvfi_mem_addr.get,  io.rvfi_mem_rdata.get, io.rvfi_mem_wdata.get
-  ) else None
+  )} else None
 }
