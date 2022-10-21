@@ -3,4 +3,4 @@ li x5 1
 LOOP: beq x5 x6 END
 addi x5 x5 1
 jal LOOP
-END:
+END: addi x7 x0 3

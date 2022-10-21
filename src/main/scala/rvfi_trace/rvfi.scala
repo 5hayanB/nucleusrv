@@ -8,6 +8,7 @@ class RVFI_IO(RVFI:Boolean, XLEN:Int, NRET:Int, ILEN:Int) extends Bundle {
 
   // - Instruction metadata
   val mem_reg_ins = if (RVFI) Some(Input(UInt(XLEN.W))) else None
+  val ex_reg_ins = if (RVFI) Some(Input(UInt(XLEN.W))) else None
 
   // - Register read/write
   val id_reg_rd1  = if (RVFI) Some(Input(SInt(XLEN.W))) else None
@@ -139,7 +140,6 @@ class RVFIUnit(RVFI:Boolean=false, XLEN:Int=32, NRET:Int=1, ILEN:Int=32) extends
 
   // - Program Counter
   val rvfi_pc_rdata = if (RVFI) Some(dontTouch(WireInit(mem_reg_pc.get))) else None
-  val rvfi_pc_wdata = if (RVFI) Some(dontTouch(WireInit(mem_reg_nPC.get))) else None
 
   // - Memory Access
   val rvfi_mem_addr  = if (RVFI) Some(dontTouch(WireInit(mem_reg_result.get))) else None
@@ -166,7 +166,7 @@ class RVFIUnit(RVFI:Boolean=false, XLEN:Int=32, NRET:Int=1, ILEN:Int=32) extends
     io.rvfi_rs1_addr, io.rvfi_rs1_rdata, io.rvfi_rs2_rdata,
 
     // - Program Counter
-    io.rvfi_pc_rdata, io.rvfi_pc_wdata,
+    io.rvfi_pc_rdata,
 
     // Delay Registers
     //
@@ -194,7 +194,7 @@ class RVFIUnit(RVFI:Boolean=false, XLEN:Int=32, NRET:Int=1, ILEN:Int=32) extends
     rvfi_rs1_addr, rvfi_rs1_rdata, rvfi_rs2_rdata,
 
     // - Program Counter
-    rvfi_pc_rdata, rvfi_pc_wdata,
+    rvfi_pc_rdata,
 
     // Delay Registers
     //
@@ -241,6 +241,8 @@ class RVFIUnit(RVFI:Boolean=false, XLEN:Int=32, NRET:Int=1, ILEN:Int=32) extends
   ) foreach {
     x => x._1.get := Mux(x._2._1, x._2._2.get, x._2._3)
   } else None
+
+  if (RVFI) io.rvfi_pc_wdata.get := Mux(io.ex_reg_ins.get === 0.U, ex_reg_nPC.get, mem_reg_nPC.get) else None
 
   val clkCycle = if (RVFI) Some(RegInit(0.U(32.W))) else None
   if (RVFI) clkCycle.get := clkCycle.get + 1.U else None

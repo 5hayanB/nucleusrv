@@ -31,6 +31,7 @@ class Top(programFile:Option[String], dataFile:Option[String], RVFI:Boolean=fals
 
   if (RVFI) Seq(
     (tracer.get.io.mem_reg_ins, core.io.mem_reg_ins),
+    (tracer.get.io.ex_reg_ins, core.io.ex_reg_ins),
 
     (tracer.get.io.id_reg_rd1, core.io.rs1_rdata),
     (tracer.get.io.id_reg_rd2, core.io.rs2_rdata),

@@ -16,6 +16,7 @@ class Core(M:Boolean = false, RVFI:Boolean=false) extends Module {
 
     // RVFI
     val mem_reg_ins = if (RVFI) Some(Output(UInt(32.W))) else None
+    val ex_reg_ins = if (RVFI) Some(Output(UInt(32.W))) else None
 
     val rs1_rdata   = if (RVFI) Some(Output(SInt(32.W))) else None
     val rs2_rdata   = if (RVFI) Some(Output(SInt(32.W))) else None
@@ -281,10 +282,16 @@ class Core(M:Boolean = false, RVFI:Boolean=false) extends Module {
   io.pin := wb_data
 
   if (RVFI) {
+          val id_br_rs1_rdata = RegInit(0.S(32.W))
+          val id_br_rs2_rdata = RegInit(0.S(32.W))
+          id_br_rs1_rdata := ID.rs1_rdata.get
+          id_br_rs2_rdata := ID.rs2_rdata.get
+
           io.mem_reg_ins.get := mem_reg_ins
+          io.ex_reg_ins.get := ex_reg_ins
              
-          io.rs1_rdata.get := EX.rs1_rdata.get
-          io.rs2_rdata.get := EX.rs2_rdata.get
+          io.rs1_rdata.get := Mux(id_reg_ins(6, 0) === 99.U, id_br_rs1_rdata, EX.rs1_rdata.get)
+          io.rs2_rdata.get := Mux(id_reg_ins(6, 0) === 99.U, id_br_rs2_rdata, EX.rs2_rdata.get)
           io.wb_rd.get := wb_addr
           io.rs1_addr.get := ID.rs1_addr.get
           io.rs2_addr.get := ID.rs2_addr.get
@@ -302,30 +309,4 @@ class Core(M:Boolean = false, RVFI:Boolean=false) extends Module {
 
           io.hdu_if_reg_write.get := ID.hdu_if_reg_write
   } else None
-
-  //if (RVFI) { Seq(
-  //  io.mem_reg_ins,   
-  //                
-  //  io.id_reg_rd1,    
-  //  io.id_reg_rd2,    
-  //  io.wb_rd,         
-  //  //io.rs1_addr,      
-  //  //io.rs2_addr,      
-  //  io.wb_data,       
-  //  io.writeEnable,   
-  //                    
-  //  io.mem_reg_pc,    
-  //  io.nextPC,        
-  //                    
-  //  io.ex_reg_result, 
-  //  io.readEnable,    
-  //  io.memWriteEnable,
-  //  io.ex_reg_wd,     
-  //  io.readData,      
-  //  
-  //) zip Seq()map (_.get := DontCare)
-
-  ////io.rs1_addr.get := ID.rs1_addr.get
-  ////io.rs2_addr.get := ID.rs2_addr.get
-  //} else None
 }
