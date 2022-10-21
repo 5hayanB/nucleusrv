@@ -1,6 +1,7 @@
 package rvfi_trace
 
 import chisel3._
+import chisel3.util._
 
 class RVFI_IO(RVFI:Boolean, XLEN:Int, NRET:Int, ILEN:Int) extends Bundle {
   // Input ports
@@ -65,22 +66,22 @@ class RVFI_IO(RVFI:Boolean, XLEN:Int, NRET:Int, ILEN:Int) extends Bundle {
 
 class RVFIUnit(RVFI:Boolean=false, XLEN:Int=32, NRET:Int=1, ILEN:Int=32) extends Module {
   // Initializing IO ports
-  val io: RVFI_IO    = IO(new RVFI_IO(RVFI, XLEN, NRET, ILEN))
-  val mem_reg_ins    = if (RVFI) Some(dontTouch(WireInit(io.mem_reg_ins.get))) else None
-  val id_reg_rd1     = if (RVFI) Some(dontTouch(WireInit(io.id_reg_rd1.get))) else None
-  val id_reg_rd2     = if (RVFI) Some(dontTouch(WireInit(io.id_reg_rd2.get))) else None
-  val wb_rd          = if (RVFI) Some(dontTouch(WireInit(io.wb_rd.get))) else None
-  val rs1_addr       = if (RVFI) Some(dontTouch(WireInit(io.rs1_addr.get))) else None
-  val rs2_addr       = if (RVFI) Some(dontTouch(WireInit(io.rs2_addr.get))) else None
-  val wb_data        = if (RVFI) Some(dontTouch(WireInit(io.wb_data.get))) else None
-  val writeEnable    = if (RVFI) Some(dontTouch(WireInit(io.writeEnable.get))) else None
-  val mem_reg_pc     = if (RVFI) Some(dontTouch(WireInit(io.mem_reg_pc.get))) else None
-  val nextPC         = if (RVFI) Some(dontTouch(WireInit(io.nextPC.get))) else None
-  val ex_reg_result  = if (RVFI) Some(dontTouch(WireInit(io.ex_reg_result.get))) else None
-  val readEnable     = if (RVFI) Some(dontTouch(WireInit(io.readEnable.get))) else None
-  val memWriteEnable = if (RVFI) Some(dontTouch(WireInit(io.memWriteEnable.get))) else None
-  val ex_reg_wd      = if (RVFI) Some(dontTouch(WireInit(io.ex_reg_wd.get))) else None
-  val readData       = if (RVFI) Some(dontTouch(WireInit(io.readData.get))) else None
+  val io: RVFI_IO      = IO(new RVFI_IO(RVFI, XLEN, NRET, ILEN))
+  val mem_reg_ins      = if (RVFI) Some(dontTouch(WireInit(io.mem_reg_ins.get))) else None
+  val id_reg_rd1       = if (RVFI) Some(dontTouch(WireInit(io.id_reg_rd1.get))) else None
+  val id_reg_rd2       = if (RVFI) Some(dontTouch(WireInit(io.id_reg_rd2.get))) else None
+  val wb_rd            = if (RVFI) Some(dontTouch(WireInit(io.wb_rd.get))) else None
+  val rs1_addr         = if (RVFI) Some(dontTouch(WireInit(io.rs1_addr.get))) else None
+  val rs2_addr         = if (RVFI) Some(dontTouch(WireInit(io.rs2_addr.get))) else None
+  val wb_data          = if (RVFI) Some(dontTouch(WireInit(io.wb_data.get))) else None
+  val writeEnable      = if (RVFI) Some(dontTouch(WireInit(io.writeEnable.get))) else None
+  val mem_reg_pc       = if (RVFI) Some(dontTouch(WireInit(io.mem_reg_pc.get))) else None
+  val nextPC           = if (RVFI) Some(dontTouch(WireInit(io.nextPC.get))) else None
+  val ex_reg_result    = if (RVFI) Some(dontTouch(WireInit(io.ex_reg_result.get))) else None
+  val readEnable       = if (RVFI) Some(dontTouch(WireInit(io.readEnable.get))) else None
+  val memWriteEnable   = if (RVFI) Some(dontTouch(WireInit(io.memWriteEnable.get))) else None
+  val ex_reg_wd        = if (RVFI) Some(dontTouch(WireInit(io.ex_reg_wd.get))) else None
+  val readData         = if (RVFI) Some(dontTouch(WireInit(io.readData.get))) else None
   val hdu_if_reg_write = if (RVFI) Some(dontTouch(WireInit(io.hdu_if_reg_write.get))) else None
 
   // Delay Registers

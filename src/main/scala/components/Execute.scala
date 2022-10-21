@@ -3,7 +3,7 @@ package nucleusrv.components
 import chisel3._
 import chisel3.util.MuxCase
 
-class Execute(M:Boolean = false) extends Module {
+class Execute(M:Boolean = false, RVFI: Boolean=false) extends Module {
   val io = IO(new Bundle {
     val immediate = Input(UInt(32.W))
     val readData1 = Input(UInt(32.W))
@@ -28,6 +28,9 @@ class Execute(M:Boolean = false) extends Module {
     val ALUresult = Output(UInt(32.W))
 
     val stall = Output(Bool())
+
+    val rs1_rdata = if (RVFI) Some(Output(SInt(32.W))) else None
+    val rs2_rdata = if (RVFI) Some(Output(SInt(32.W))) else None
   })
 
   val alu = Module(new ALU)
@@ -144,4 +147,10 @@ class Execute(M:Boolean = false) extends Module {
   // io.ALUresult := alu.io.result
 
   io.writeData := inputMux2
+
+  if (RVFI) {Seq(
+    (io.rs1_rdata, inputMux1),
+    (io.rs2_rdata, inputMux2)
+  ) map (n => n._1.get := n._2.asSInt)
+  } else None
 }

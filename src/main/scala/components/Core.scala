@@ -17,12 +17,12 @@ class Core(M:Boolean = false, RVFI:Boolean=false) extends Module {
     // RVFI
     val mem_reg_ins = if (RVFI) Some(Output(UInt(32.W))) else None
 
-    val id_reg_rd1 = if (RVFI) Some(Output(SInt(32.W))) else None
-    val id_reg_rd2 = if (RVFI) Some(Output(SInt(32.W))) else None
-    val wb_rd      = if (RVFI) Some(Output(UInt(5.W))) else None
-    val rs1_addr   = if (RVFI) Some(Output(UInt(5.W))) else None
-    val rs2_addr   = if (RVFI) Some(Output(UInt(5.W))) else None
-    val wb_data    = if (RVFI) Some(Output(SInt(32.W))) else None
+    val rs1_rdata   = if (RVFI) Some(Output(SInt(32.W))) else None
+    val rs2_rdata   = if (RVFI) Some(Output(SInt(32.W))) else None
+    val wb_rd       = if (RVFI) Some(Output(UInt(5.W))) else None
+    val rs1_addr    = if (RVFI) Some(Output(UInt(5.W))) else None
+    val rs2_addr    = if (RVFI) Some(Output(UInt(5.W))) else None
+    val wb_data     = if (RVFI) Some(Output(SInt(32.W))) else None
     val writeEnable = if (RVFI) Some(Output(Bool())) else None
 
     val mem_reg_pc = if (RVFI) Some(Output(UInt(32.W))) else None
@@ -87,7 +87,7 @@ class Core(M:Boolean = false, RVFI:Boolean=false) extends Module {
   //Pipeline Units
   val IF = Module(new InstructionFetch).io
   val ID = Module(new InstructionDecode(RVFI)).io
-  val EX = Module(new Execute(M = M)).io
+  val EX = Module(new Execute(M = M, RVFI=RVFI)).io
   val MEM = Module(new MemoryFetch)
 
   /*****************
@@ -283,8 +283,8 @@ class Core(M:Boolean = false, RVFI:Boolean=false) extends Module {
   if (RVFI) {
           io.mem_reg_ins.get := mem_reg_ins
              
-          io.id_reg_rd1.get := id_reg_rd1.asSInt
-          io.id_reg_rd2.get := id_reg_rd2.asSInt
+          io.rs1_rdata.get := EX.rs1_rdata.get
+          io.rs2_rdata.get := EX.rs2_rdata.get
           io.wb_rd.get := wb_addr
           io.rs1_addr.get := ID.rs1_addr.get
           io.rs2_addr.get := ID.rs2_addr.get

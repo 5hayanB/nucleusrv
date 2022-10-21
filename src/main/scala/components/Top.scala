@@ -32,8 +32,8 @@ class Top(programFile:Option[String], dataFile:Option[String], RVFI:Boolean=fals
   if (RVFI) Seq(
     (tracer.get.io.mem_reg_ins, core.io.mem_reg_ins),
 
-    (tracer.get.io.id_reg_rd1, core.io.id_reg_rd1),
-    (tracer.get.io.id_reg_rd2, core.io.id_reg_rd2),
+    (tracer.get.io.id_reg_rd1, core.io.rs1_rdata),
+    (tracer.get.io.id_reg_rd2, core.io.rs2_rdata),
     (tracer.get.io.wb_rd, core.io.wb_rd),
     (tracer.get.io.rs1_addr, core.io.rs1_addr),
     (tracer.get.io.rs2_addr, core.io.rs2_addr),
@@ -49,12 +49,5 @@ class Top(programFile:Option[String], dataFile:Option[String], RVFI:Boolean=fals
     (tracer.get.io.ex_reg_wd, core.io.ex_reg_wd),
     (tracer.get.io.readData, core.io.readData),
     (tracer.get.io.hdu_if_reg_write, core.io.hdu_if_reg_write)
-  ) map (x => x._1.get := x._2.get) else None
-
-  //if (RVFI) printf(
-  //      "ClkCycle: %d, pc_rdata: %x, pc_wdata: %x, insn: %x, mode: %d, rs1_addr: %d, rs1_rdata: %x, rs2_addr: %d, rs2_rdata: %x, rd_addr: %d, rd_wdata: %x, mem_addr: %x, mem_rdata: %x, mem_wdata: %x\n",
-  //      clkCycle.get,                    tracer.get.io.rvfi_pc_rdata.get,  tracer.get.io.rvfi_pc_wdata.get,  tracer.get.io.rvfi_insn.get,      tracer.get.io.rvfi_mode.get,
-  //      tracer.get.io.rvfi_rs1_addr.get, tracer.get.io.rvfi_rs1_rdata.get, tracer.get.io.rvfi_rs2_addr.get,  tracer.get.io.rvfi_rs2_rdata.get, tracer.get.io.rvfi_rd_addr.get,
-  //      tracer.get.io.rvfi_rd_wdata.get, tracer.get.io.rvfi_mem_addr.get,  tracer.get.io.rvfi_mem_rdata.get, tracer.get.io.rvfi_mem_wdata.get
-  //) else None
+  ) map (n => n._1.get := n._2.get) else None
 }
