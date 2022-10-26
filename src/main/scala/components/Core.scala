@@ -265,7 +265,7 @@ class Core(M:Boolean = false, RVFI:Boolean=false) extends Module {
     wb_data := MEM.io.readData
     wb_addr := mem_reg_wra
   }.elsewhen(mem_reg_ctl_memToReg === 2.U) {
-      wb_data := mem_reg_pc
+      wb_data := mem_reg_pc + 4.U
       wb_addr := mem_reg_wra
     }
     .otherwise {

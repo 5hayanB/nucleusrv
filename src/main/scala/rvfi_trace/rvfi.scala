@@ -246,6 +246,7 @@ class RVFIUnit(RVFI:Boolean=false, XLEN:Int=32, NRET:Int=1, ILEN:Int=32) extends
 
   val clkCycle = if (RVFI) Some(RegInit(0.U(32.W))) else None
   if (RVFI) clkCycle.get := clkCycle.get + 1.U else None
+
   if (RVFI) when (rvfi_valid.get) {
     printf(
         "ClkCycle: %d, pc_rdata: %x, pc_wdata: %x, insn: %x, mode: %d, rs1_addr: %d, rs1_rdata: %x, rs2_addr: %d, rs2_rdata: %x, rd_addr: %d, rd_wdata: %x, mem_addr: %x, mem_rdata: %x, mem_wdata: %x\n",

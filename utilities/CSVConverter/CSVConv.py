@@ -127,41 +127,22 @@ class CSVConv3(CSVConv2):
     def toCSVDict(self):
             for i in range(len(self.traceDict)):
                 entry = self.traceDict[i]
-                #print(entry['insn'], entry['insn'] != '00000000')
 
-                if entry['insn'] != '00000000':
-                    #if entry['insn'] == self.traceDict[i - 1]['insn']:
-                    #    self.csvDict[-1] = {
-                    #        self.rvfiHeaders[0] : entry['pc_rdata'],
-                    #        self.rvfiHeaders[1] : entry['pc_wdata'],
-                    #        self.rvfiHeaders[2] : self.gpr[int(entry['rs1_addr'])],
-                    #        self.rvfiHeaders[3] : entry['rs1_rdata'],
-                    #        self.rvfiHeaders[4] : self.gpr[int(entry['rs2_addr'])],
-                    #        self.rvfiHeaders[5] : entry['rs2_rdata'],
-                    #        self.rvfiHeaders[6] : self.gpr[int(entry['rd_addr'])],
-                    #        self.rvfiHeaders[7] : entry['rd_wdata'],
-                    #        self.rvfiHeaders[8] : entry['insn'],
-                    #        self.rvfiHeaders[9] : entry['mode'],
-                    #        self.rvfiHeaders[10]: entry['mem_addr'],
-                    #        self.rvfiHeaders[11]: entry['mem_rdata'],
-                    #        self.rvfiHeaders[12]: entry['mem_wdata']
-                    #    }
-                    #else:
-                    self.csvDict.append({
-                        self.rvfiHeaders[0] : entry['pc_rdata'],
-                        self.rvfiHeaders[1] : entry['pc_wdata'],
-                        self.rvfiHeaders[2] : self.gpr[int(entry['rs1_addr'])],
-                        self.rvfiHeaders[3] : entry['rs1_rdata'],
-                        self.rvfiHeaders[4] : self.gpr[int(entry['rs2_addr'])],
-                        self.rvfiHeaders[5] : entry['rs2_rdata'],
-                        self.rvfiHeaders[6] : self.gpr[int(entry['rd_addr'])],
-                        self.rvfiHeaders[7] : entry['rd_wdata'],
-                        self.rvfiHeaders[8] : entry['insn'],
-                        self.rvfiHeaders[9] : entry['mode'],
-                        self.rvfiHeaders[10]: entry['mem_addr'],
-                        self.rvfiHeaders[11]: entry['mem_rdata'],
-                        self.rvfiHeaders[12]: entry['mem_wdata']
-                    })
+                self.csvDict.append({
+                    self.rvfiHeaders[0] : entry['pc_rdata'],
+                    self.rvfiHeaders[1] : entry['pc_wdata'],
+                    self.rvfiHeaders[2] : self.gpr[int(entry['rs1_addr'])],
+                    self.rvfiHeaders[3] : entry['rs1_rdata'],
+                    self.rvfiHeaders[4] : self.gpr[int(entry['rs2_addr'])],
+                    self.rvfiHeaders[5] : entry['rs2_rdata'],
+                    self.rvfiHeaders[6] : self.gpr[int(entry['rd_addr'])],
+                    self.rvfiHeaders[7] : entry['rd_wdata'],
+                    self.rvfiHeaders[8] : entry['insn'],
+                    self.rvfiHeaders[9] : entry['mode'],
+                    self.rvfiHeaders[10]: entry['mem_addr'],
+                    self.rvfiHeaders[11]: entry['mem_rdata'],
+                    self.rvfiHeaders[12]: entry['mem_wdata']
+                })
 
                 if entry['insn'] == '00008067':
                     break
