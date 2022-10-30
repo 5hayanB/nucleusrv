@@ -8,7 +8,7 @@ if __name__ == '__main__':
 
     # Refining the log
     logList = [_ for _ in elfLog if search('^[0-9a-f]+:\s+[0-9a-f]+.+', _)]
-    logList = [split('\s+', _) for _ in logList]
+    logList = [split('\s', _) for _ in logList]
 
     # Writing assembly.hex
     hexList = [_[1] for _ in logList]
