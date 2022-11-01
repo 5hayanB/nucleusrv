@@ -4,6 +4,7 @@ if __name__ == '__main__':
     # Reading dump file
     with open('test.elf', 'r', encoding='UTF-8') as f:
         elfLog = f.readlines()
+
     elfLog = [sub('\n', '', _) for _ in elfLog]
 
     # Refining the log
@@ -12,14 +13,17 @@ if __name__ == '__main__':
 
     # Writing assembly.hex
     hexList = [_[1] for _ in logList]
-    with open('assembly.hex', 'w', encoding = 'UTF-8') as f:
-        for i in range(len(hexList) - 1):
+
+    with open('assembly.hex', 'w', encoding='UTF-8') as f:
+
+        for i in range(len(hexList)):
             f.write(f'{hexList[i]}\n')
-        f.write(hexList[-1])
+
+        f.write('\n')
 
     # Writing assembly.s
     asmList = [_[-1] if (_[-1] == 'ret') or (_[-1] == 'nop') else f'{_[2]} {sub(",", " ", _[3])}' for _ in logList]
+
     with open('assembly.s', 'w', encoding = 'UTF-8') as f:
-        for i in range(len(hexList) - 1):
+        for i in range(len(hexList)):
             f.write(f'{asmList[i]}\n')
-        f.write(asmList[-1])
