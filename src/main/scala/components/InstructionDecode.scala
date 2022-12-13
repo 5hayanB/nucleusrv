@@ -124,7 +124,7 @@ class InstructionDecode(RVFI:Boolean) extends Module {
 
   val immediate = Module(new ImmediateGen)
   immediate.io.instruction := io.id_instruction
-  io.immediate := immediate.io.out
+  io.immediate := immediate.io.out.asUInt
 
   // Branch Forwarding
   val input1 = Wire(UInt(32.W))
@@ -172,12 +172,12 @@ class InstructionDecode(RVFI:Boolean) extends Module {
 
   //Offset Calculation (Jump/Branch)
   when(io.ctl_jump === 1.U) {
-    io.pcPlusOffset := io.pcAddress + io.immediate
+    io.pcPlusOffset := io.pcAddress + io.immediate.asUInt
   }.elsewhen(io.ctl_jump === 2.U) {
-      io.pcPlusOffset := j_offset + io.immediate
+      io.pcPlusOffset := j_offset + io.immediate.asUInt
     }
     .otherwise {
-      io.pcPlusOffset := io.pcAddress + immediate.io.out
+      io.pcPlusOffset := io.pcAddress + immediate.io.out.asUInt
     }
 
   when(bu.io.taken || io.ctl_jump =/= 0.U) {
